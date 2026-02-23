@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
     
     private final UserMapper userMapper;
+    private final TokenService tokenService;
     
     @Transactional(rollbackFor = Exception.class)
     public UserResp register(RegisterReq req) {
@@ -76,8 +77,9 @@ public class UserService {
             throw new BizException(ResultCode.PASSWORD_ERROR);
         }
         
-        // 生成简单token (实际项目应使用JWT)
+        // 生成token并缓存到Redis
         String token = generateToken(user);
+        tokenService.saveToken(user.getId(), token);
         
         log.info("用户登录成功: userId={}", user.getId());
         
