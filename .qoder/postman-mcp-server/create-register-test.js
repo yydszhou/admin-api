@@ -65,6 +65,73 @@ function buildCollection() {
         description: '用户认证相关接口 - 注册、登录、登出等',
         item: [
           {
+            name: '用户登录',
+            description: '用户登录接口测试用例',
+            item: [
+              {
+                name: '登录成功',
+                request: {
+                  method: 'POST',
+                  header: [{ key: 'Content-Type', value: 'application/json' }],
+                  body: {
+                    mode: 'raw',
+                    raw: JSON.stringify({
+                      username: 'testuser001',
+                      password: '123456'
+                    }, null, 2)
+                  },
+                  url: {
+                    raw: '{{baseUrl}}/api/users/login',
+                    host: ['{{baseUrl}}'],
+                    path: ['api', 'users', 'login']
+                  },
+                  description: '正常登录流程，预期返回200和token'
+                },
+                response: []
+              },
+              {
+                name: '登录失败-用户不存在',
+                request: {
+                  method: 'POST',
+                  header: [{ key: 'Content-Type', value: 'application/json' }],
+                  body: {
+                    mode: 'raw',
+                    raw: JSON.stringify({
+                      username: 'notexistuser',
+                      password: '123456'
+                    }, null, 2)
+                  },
+                  url: {
+                    raw: '{{baseUrl}}/api/users/login',
+                    host: ['{{baseUrl}}'],
+                    path: ['api', 'users', 'login']
+                  },
+                  description: '用户名不存在，预期返回1003错误'
+                }
+              },
+              {
+                name: '登录失败-密码错误',
+                request: {
+                  method: 'POST',
+                  header: [{ key: 'Content-Type', value: 'application/json' }],
+                  body: {
+                    mode: 'raw',
+                    raw: JSON.stringify({
+                      username: 'testuser001',
+                      password: 'wrongpassword'
+                    }, null, 2)
+                  },
+                  url: {
+                    raw: '{{baseUrl}}/api/users/login',
+                    host: ['{{baseUrl}}'],
+                    path: ['api', 'users', 'login']
+                  },
+                  description: '密码不正确，预期返回1004错误'
+                }
+              }
+            ]
+          },
+          {
             name: '用户注册',
             description: '用户注册接口测试用例',
             item: [

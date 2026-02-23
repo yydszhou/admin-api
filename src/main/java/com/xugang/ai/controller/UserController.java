@@ -1,7 +1,9 @@
 package com.xugang.ai.controller;
 
 import com.xugang.ai.common.ApiResponse;
+import com.xugang.ai.req.LoginReq;
 import com.xugang.ai.req.RegisterReq;
+import com.xugang.ai.resp.LoginResp;
 import com.xugang.ai.resp.UserResp;
 import com.xugang.ai.service.UserService;
 import jakarta.validation.Valid;
@@ -27,5 +29,14 @@ public class UserController {
         UserResp resp = userService.register(req);
         
         return ApiResponse.success("注册成功", resp, req.getTraceId());
+    }
+    
+    @PostMapping("/login")
+    public ApiResponse<LoginResp> login(@Valid @RequestBody LoginReq req) {
+        log.info("登录请求: username={}, traceId={}", req.getUsername(), req.getTraceId());
+        
+        LoginResp resp = userService.login(req);
+        
+        return ApiResponse.success("登录成功", resp, req.getTraceId());
     }
 }
