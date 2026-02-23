@@ -70,9 +70,8 @@ public class UserService {
             throw new BizException(ResultCode.USER_NOT_FOUND);
         }
         
-        // 验证密码
-        String encryptedPassword = Sha256Util.encrypt(req.getPassword());
-        if (!encryptedPassword.equals(user.getPassword())) {
+        // 验证密码（前端已SHA256加密传输）
+        if (!req.getPassword().equals(user.getPassword())) {
             log.warn("密码错误: username={}", req.getUsername());
             throw new BizException(ResultCode.PASSWORD_ERROR);
         }
