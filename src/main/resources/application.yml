@@ -10,17 +10,7 @@ spring:
     username: ai
     password: ai
     driver-class-name: org.postgresql.Driver
-
-mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      logic-delete-field: is_deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-
-spring:
+  
   data:
     redis:
       host: localhost
@@ -33,6 +23,15 @@ spring:
           max-active: 8
           max-idle: 8
           min-idle: 0
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
 
 # Token配置
 token:
