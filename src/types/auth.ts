@@ -43,6 +43,7 @@ export interface LoginForm {
   password: string
   /** 记住我 */
   remember: boolean
+  [key: string]: unknown
 }
 
 /**
@@ -63,6 +64,7 @@ export interface RegisterForm {
   code?: string
   /** 同意协议 */
   agreement: boolean
+  [key: string]: unknown
 }
 
 /**
@@ -77,6 +79,7 @@ export interface ForgotPasswordForm {
   newPassword: string
   /** 确认新密码 */
   confirmPassword: string
+  [key: string]: unknown
 }
 
 /**

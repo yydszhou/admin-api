@@ -5,9 +5,10 @@
 
 import axios, {
   type AxiosInstance,
-  type AxiosRequestConfig,
   type AxiosResponse,
-  type AxiosError
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+  type AxiosRequestConfig
 } from 'axios'
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types/auth'
@@ -47,10 +48,10 @@ const clearAuth = (): void => {
  * 在请求发送前统一处理，如添加 Token
  */
 request.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // 获取 Token 并添加到请求头
     const token = getToken()
-    if (token && config.headers) {
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
@@ -71,7 +72,7 @@ request.interceptors.response.use(
     
     // 根据业务状态码处理
     if (data.code === 200 || data.code === 0) {
-      return data.data
+      return response
     }
     
     // 业务错误处理
