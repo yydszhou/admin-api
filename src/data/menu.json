@@ -1,0 +1,114 @@
+{
+  "menus": [
+    {
+      "id": "1",
+      "name": "仪表盘",
+      "path": "/",
+      "icon": "HomeFilled",
+      "type": "menu",
+      "sort": 1
+    },
+    {
+      "id": "2",
+      "name": "系统管理",
+      "path": "/system",
+      "icon": "Setting",
+      "type": "submenu",
+      "sort": 2,
+      "children": [
+        {
+          "id": "2-1",
+          "name": "用户管理",
+          "path": "/system/user",
+          "icon": "User",
+          "type": "menu",
+          "sort": 1
+        },
+        {
+          "id": "2-2",
+          "name": "角色管理",
+          "path": "/system/role",
+          "icon": "UserFilled",
+          "type": "menu",
+          "sort": 2
+        },
+        {
+          "id": "2-3",
+          "name": "菜单管理",
+          "path": "/system/menu",
+          "icon": "Menu",
+          "type": "menu",
+          "sort": 3
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "name": "订单管理",
+      "path": "/order",
+      "icon": "ShoppingCart",
+      "type": "submenu",
+      "sort": 3,
+      "children": [
+        {
+          "id": "3-1",
+          "name": "订单查询",
+          "path": "/order/query",
+          "icon": "Search",
+          "type": "menu",
+          "sort": 1
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "name": "数据",
+      "path": "/data",
+      "icon": "DataBoard",
+      "type": "menu",
+      "sort": 4
+    },
+    {
+      "id": "5",
+      "name": "模板",
+      "path": "/template",
+      "icon": "DocumentCopy",
+      "type": "menu",
+      "sort": 5
+    },
+    {
+      "id": "6",
+      "name": "其他",
+      "path": "/other",
+      "icon": "MoreFilled",
+      "type": "submenu",
+      "sort": 6,
+      "children": [
+        {
+          "id": "6-1",
+          "name": "测试页面 1",
+          "path": "/other/page1",
+          "icon": "Document",
+          "type": "menu",
+          "sort": 1
+        },
+        {
+          "id": "6-2",
+          "name": "测试页面 2",
+          "path": "/other/page2",
+          "icon": "Document",
+          "type": "menu",
+          "sort": 2
+        },
+        {
+          "id": "6-3",
+          "name": "测试页面 3",
+          "path": "/other/page3",
+          "icon": "Document",
+          "type": "menu",
+          "sort": 3
+        }
+      ]
+    }
+  ]
+}

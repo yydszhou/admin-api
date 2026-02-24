@@ -33,6 +33,96 @@ const router = createRouter({
           }
         },
         {
+          path: '/system',
+          redirect: '/system/user',
+          meta: {
+            title: '系统管理'
+          },
+          children: [
+            {
+              path: 'user',
+              name: 'user-management',
+              component: () => import('@/views/system/user.vue'),
+              meta: {
+                title: '用户管理',
+                icon: 'User'
+              }
+            },
+            {
+              path: 'role',
+              name: 'role-management',
+              component: () => import('@/views/dashboard/index.vue'),
+              meta: {
+                title: '角色管理',
+                icon: 'UserFilled'
+              }
+            },
+            {
+              path: 'menu',
+              name: 'menu-management',
+              component: () => import('@/views/dashboard/index.vue'),
+              meta: {
+                title: '菜单管理',
+                icon: 'Menu'
+              }
+            }
+          ]
+        },
+        {
+          path: '/order',
+          redirect: '/order/query',
+          meta: {
+            title: '订单管理'
+          },
+          children: [
+            {
+              path: 'query',
+              name: 'order-query',
+              component: () => import('@/views/dashboard/index.vue'),
+              meta: {
+                title: '订单查询',
+                icon: 'Search'
+              }
+            }
+          ]
+        },
+        {
+          path: '/other',
+          redirect: '/other/page1',
+          meta: {
+            title: '其他'
+          },
+          children: [
+            {
+              path: 'page1',
+              name: 'test-page1',
+              component: () => import('@/views/test/page1.vue'),
+              meta: {
+                title: '测试页面 1',
+                icon: 'Document'
+              }
+            },
+            {
+              path: 'page2',
+              name: 'test-page2',
+              component: () => import('@/views/test/page2.vue'),
+              meta: {
+                title: '测试页面 2',
+                icon: 'Document'
+              }
+            },
+            {
+              path: 'page3',
+              name: 'test-page3',
+              component: () => import('@/views/test/page3.vue'),
+              meta: {
+                title: '测试页面 3',
+                icon: 'Document'
+              }
+            }
+          ]
+        },
+        {
           path: '/about',
           name: 'about',
           component: () => import('@/views/AboutView.vue'),

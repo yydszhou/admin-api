@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-container">
+  <div class="dashboard-container" :class="{ 'dark-mode': isDark }">
     <!-- 面包屑导航 -->
     <el-breadcrumb class="dashboard-breadcrumb" separator=">">
       <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
@@ -141,10 +141,17 @@
  * 仪表盘页面
  * 包含数据概览、图表、日历、订单表格、资讯列表等模块
  */
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
+import { storeToRefs } from 'pinia'
+import { useThemeStore } from '@/stores/theme'
+
+// ==================== 主题 ====================
+
+const themeStore = useThemeStore()
+const { isDark } = storeToRefs(themeStore)
 
 // ==================== 数据概览 ====================
 
@@ -382,6 +389,32 @@ const viewNewsDetail = (news: News) => {
 }
 
 // ==================== 生命周期 ====================
+
+/**
+ * 更新图表主题
+ */
+const updateChartTheme = () => {
+  const theme = isDark.value ? 'dark' : 'light'
+
+  // 重新初始化图表以应用主题
+  if (trendChart) {
+    trendChart.dispose()
+    initTrendChart()
+  }
+  if (barChart) {
+    barChart.dispose()
+    initBarChart()
+  }
+}
+
+/**
+ * 监听主题变化，更新图表
+ */
+watch(isDark, () => {
+  nextTick(() => {
+    updateChartTheme()
+  })
+})
 
 onMounted(() => {
   nextTick(() => {
@@ -635,6 +668,126 @@ onUnmounted(() => {
   .data-overview {
     .el-col {
       margin-bottom: 16px;
+    }
+  }
+}
+
+// 暗黑模式样式
+.dark-mode {
+  .dashboard-breadcrumb {
+    background-color: #1f1f1f;
+    border-color: #333;
+
+    :deep(.el-breadcrumb__item) {
+      .el-breadcrumb__inner {
+        color: #a6a6a6;
+      }
+
+      &:last-child .el-breadcrumb__inner {
+        color: #e0e0e0;
+      }
+    }
+  }
+
+  .overview-card {
+    background-color: #1f1f1f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+    .card-content {
+      .card-value {
+        color: #e0e0e0;
+      }
+
+      .card-label {
+        color: #a6a6a6;
+      }
+    }
+  }
+
+  .chart-card,
+  .info-card {
+    background-color: #1f1f1f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+    .card-header {
+      .card-title {
+        color: #e0e0e0;
+      }
+    }
+  }
+
+  .info-section {
+    .dashboard-calendar {
+      :deep(.el-calendar__header) {
+        border-bottom-color: #333;
+      }
+
+      :deep(.el-calendar-table) {
+        th {
+          color: #a6a6a6;
+          border-bottom-color: #333;
+        }
+
+        td {
+          border-bottom-color: #333;
+          color: #e0e0e0;
+        }
+
+        .el-calendar-day {
+          color: #e0e0e0;
+        }
+      }
+
+      .calendar-cell {
+        &:hover {
+          background-color: #333;
+        }
+      }
+    }
+
+    :deep(.el-table) {
+      background-color: transparent;
+      color: #e0e0e0;
+
+      th.el-table__cell {
+        background-color: #2a2a2a;
+        color: #e0e0e0;
+      }
+
+      td.el-table__cell {
+        background-color: transparent;
+        border-bottom-color: #333;
+      }
+
+      tr {
+        background-color: transparent;
+      }
+
+      .el-table__body tr:hover > td.el-table__cell {
+        background-color: #2a2a2a;
+      }
+    }
+  }
+
+  .news-section {
+    .info-card {
+      .news-list {
+        .news-item {
+          border-bottom-color: #333;
+
+          .news-title {
+            color: #e0e0e0;
+
+            &:hover {
+              color: #1677ff;
+            }
+          }
+
+          .news-date {
+            color: #a6a6a6;
+          }
+        }
+      }
     }
   }
 }

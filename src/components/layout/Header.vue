@@ -102,13 +102,15 @@
  * 顶部导航栏组件
  * 包含 Logo、系统名称、快捷操作、用户头像等
  */
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useThemeStore } from '@/stores/theme'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 
 /**
  * Props 定义
@@ -129,7 +131,7 @@ const emit = defineEmits<{
 /**
  * 暗黑模式状态
  */
-const isDark = ref(false)
+const { isDark } = storeToRefs(themeStore)
 
 /**
  * 切换侧边栏折叠状态
@@ -167,7 +169,7 @@ const toggleFullscreen = () => {
  * 切换主题
  */
 const toggleTheme = () => {
-  isDark.value = !isDark.value
+  themeStore.toggleTheme()
   ElMessage.success(isDark.value ? '已切换到暗黑模式' : '已切换到亮色模式')
 }
 
