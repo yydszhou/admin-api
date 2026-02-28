@@ -51,19 +51,19 @@ const router = createRouter({
             {
               path: 'role',
               name: 'role-management',
-              component: () => import('@/views/dashboard/index.vue'),
+              component: () => import('@/views/system/role.vue'),
               meta: {
                 title: '角色管理',
                 icon: 'UserFilled'
               }
             },
             {
-              path: 'menu',
-              name: 'menu-management',
-              component: () => import('@/views/dashboard/index.vue'),
+              path: 'permission',
+              name: 'permission-management',
+              component: () => import('@/views/system/permission.vue'),
               meta: {
-                title: '菜单管理',
-                icon: 'Menu'
+                title: '权限管理',
+                icon: 'Key'
               }
             }
           ]

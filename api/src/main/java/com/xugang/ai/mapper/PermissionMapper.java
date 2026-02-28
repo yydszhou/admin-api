@@ -3,17 +3,15 @@ package com.xugang.ai.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.xugang.ai.entity.Permission;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
 @Mapper
 public interface PermissionMapper extends BaseMapper<Permission> {
 
-    /**
-     * 根据用户ID一次性加载该用户所有角色对应的权限集合（两层 JOIN，防止 N+1）
-     * 链路：users → user_roles → roles → role_permissions → permissions
-     */
     @Select("""
             SELECT DISTINCT p.*
             FROM permissions p
@@ -25,4 +23,27 @@ public interface PermissionMapper extends BaseMapper<Permission> {
               AND p.is_deleted = 0
             """)
     List<Permission> selectPermissionsByUserId(Long userId);
+
+    @Select("""
+            SELECT p.*
+            FROM permissions p
+            WHERE (#{keyword} IS NULL OR #{keyword} = ''
+                   OR p.permission_name ILIKE CONCAT('%', #{keyword}, '%')
+                   OR p.permission_code ILIKE CONCAT('%', #{keyword}, '%')
+                   OR p.module ILIKE CONCAT('%', #{keyword}, '%'))
+            ORDER BY p.module, p.id
+            """)
+    List<Permission> selectPermissionList(@Param("keyword") String keyword);
+
+    @Select("SELECT COUNT(*) FROM permissions WHERE id = #{permissionId}")
+    Long countByPermissionId(@Param("permissionId") Long permissionId);
+
+    @Update("""
+            UPDATE permissions
+            SET is_deleted = #{isDeleted},
+                update_time = CURRENT_TIMESTAMP
+            WHERE id = #{permissionId}
+            """)
+    int updatePermissionEnabled(@Param("permissionId") Long permissionId,
+                                @Param("isDeleted") Integer isDeleted);
 }
