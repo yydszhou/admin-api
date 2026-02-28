@@ -20,19 +20,6 @@ import {
 } from '@/api/auth'
 
 /**
- * 计算 SHA256 哈希值
- * @param message 要哈希的字符串
- * @returns SHA256 哈希值（十六进制字符串）
- */
-const sha256 = async (message: string): Promise<string> => {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(message)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-/**
  * 用户 Store
  */
 export const useUserStore = defineStore('user', () => {
@@ -145,12 +132,8 @@ export const useUserStore = defineStore('user', () => {
    */
   const login = async (loginForm: LoginForm): Promise<boolean> => {
     try {
-      // 对密码进行 SHA256 加密
-      const hashedPassword = await sha256(loginForm.password)
-      const response: LoginResponse = await loginApi({
-        ...loginForm,
-        password: hashedPassword
-      })
+      // 明文传输密码，后端使用 BCrypt 比对
+      const response: LoginResponse = await loginApi(loginForm)
       
       // 保存 Token 和用户信息
       setToken(response.token, loginForm.remember)

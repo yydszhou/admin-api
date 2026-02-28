@@ -47,7 +47,7 @@ public class UserService {
         User user = new User();
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
-        // BCrypt 加密密码
+        // 存储前使用 BCrypt 加密（前端明文传输）
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setStatus(1);
 
@@ -57,9 +57,10 @@ public class UserService {
         return convertToResp(user);
     }
 
-    // ----------------------------------------------------------------
-    // 登录（从数据库实时加载角色 + 权限）
-    // ----------------------------------------------------------------
+        // ----------------------------------------------------------------
+        // 登录（从数据库实时加载角色 + 权限）
+        // 密码为明文，由 BCryptPasswordEncoder.matches() 与数据库 hash 比对
+        // ----------------------------------------------------------------
     public LoginResp login(LoginReq req) {
         log.info("用户登录: username={}", req.getUsername());
 
