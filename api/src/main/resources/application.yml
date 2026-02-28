@@ -4,13 +4,13 @@ server:
 spring:
   application:
     name: ai
-  
+
   datasource:
     url: jdbc:postgresql://localhost:5432/ai
     username: ai
     password: ai
     driver-class-name: org.postgresql.Driver
-  
+
   data:
     redis:
       host: localhost
@@ -24,8 +24,18 @@ spring:
           max-idle: 8
           min-idle: 0
 
+  # Jackson：LocalDateTime 序列化格式
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+
 mybatis-plus:
+  type-aliases-package: com.xugang.ai.entity
   configuration:
+    # 下划线 → 驼峰字段自动映射
+    map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
@@ -33,6 +43,6 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# Token配置
+# Token 配置
 token:
   expire-hours: 1

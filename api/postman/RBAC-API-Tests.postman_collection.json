@@ -1,0 +1,1005 @@
+{
+  "info": {
+    "_postman_id": "rbac-api-test-collection-v1",
+    "name": "RBAC API 完整测试集合",
+    "description": "覆盖：注册、登录、获取用户信息、权限校验（user:delete / config:update / report:export）等全场景测试\n\n测试账号：\n- admin / admin123       → ADMIN（全部权限）\n- operator / oper123     → OPERATOR（user:view/create/update + report:view/export）\n- auditor / audit123     → AUDITOR（user:view + report:view + config:view）",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+
+  "variable": [
+    { "key": "baseUrl",        "value": "http://localhost:8080",  "type": "string" },
+    { "key": "adminToken",     "value": "",                       "type": "string" },
+    { "key": "operatorToken",  "value": "",                       "type": "string" },
+    { "key": "auditorToken",   "value": "",                       "type": "string" },
+    { "key": "newUserId",      "value": "",                       "type": "string" }
+  ],
+
+  "item": [
+
+    {
+      "name": "01 - 用户注册",
+      "item": [
+
+        {
+          "name": "✅ 正常注册",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('返回 userId', () => pm.expect(json.data.id).to.be.a('number'));",
+                  "pm.test('返回 username', () => pm.expect(json.data.username).to.eql('testuser_001'));",
+                  "pm.test('不暴露密码', () => pm.expect(json.data.password).to.be.undefined);",
+                  "pm.test('包含 traceId', () => pm.expect(json.traceId).to.eql('trace-register-001'));",
+                  "// 保存新用户ID供后续删除测试使用",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('newUserId', json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser_001\",\n  \"email\": \"testuser001@example.com\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-register-001\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        },
+
+        {
+          "name": "❌ 用户名重复",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 1001', () => pm.expect(json.code).to.eql(1001));",
+                  "pm.test('消息：用户名已存在', () => pm.expect(json.message).to.include('用户名已存在'));",
+                  "pm.test('data 为 null', () => pm.expect(json.data).to.be.null);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"email\": \"newadmin@example.com\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-register-002\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        },
+
+        {
+          "name": "❌ 邮箱已被注册",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 1002', () => pm.expect(json.code).to.eql(1002));",
+                  "pm.test('消息：邮箱已被注册', () => pm.expect(json.message).to.include('邮箱已被注册'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser_x\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-register-003\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - 用户名为空",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));",
+                  "pm.test('消息含参数校验失败', () => pm.expect(json.message).to.include('参数校验失败'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"email\": \"valid@example.com\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-register-004\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - 用户名过短（<3字符）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));",
+                  "pm.test('消息含3-20', () => pm.expect(json.message).to.include('3-20'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ab\",\n  \"email\": \"valid@example.com\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-register-005\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - 邮箱格式非法",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));",
+                  "pm.test('消息含邮箱格式', () => pm.expect(json.message).to.include('邮箱格式'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"validuser\",\n  \"email\": \"not-an-email\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-register-006\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - 密码过短（<6字符）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"validuser\",\n  \"email\": \"valid@example.com\",\n  \"password\": \"abc\",\n  \"traceId\": \"trace-register-007\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - 缺少必填字段（无 password）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));",
+                  "pm.test('消息含密码不能为空', () => pm.expect(json.message).to.include('密码不能为空'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"validuser\",\n  \"email\": \"valid@example.com\",\n  \"traceId\": \"trace-register-008\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api","users","register"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "02 - 用户登录",
+      "item": [
+
+        {
+          "name": "✅ admin 登录成功（ADMIN角色）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('消息：登录成功', () => pm.expect(json.message).to.eql('登录成功'));",
+                  "pm.test('返回 token', () => pm.expect(json.data.token).to.be.a('string').and.have.lengthOf(64));",
+                  "pm.test('返回 userId', () => pm.expect(json.data.userId).to.be.a('number'));",
+                  "pm.test('返回 roles 含 ADMIN', () => pm.expect(json.data.roles).to.include('ADMIN'));",
+                  "pm.test('返回 permissions 含 user:delete', () => pm.expect(json.data.permissions).to.include('user:delete'));",
+                  "pm.test('不暴露密码', () => pm.expect(json.data.password).to.be.undefined);",
+                  "pm.test('包含 traceId', () => pm.expect(json.traceId).to.eql('trace-login-admin'));",
+                  "// 保存 token 供后续测试使用",
+                  "pm.collectionVariables.set('adminToken', json.data.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\",\n  \"traceId\": \"trace-login-admin\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        },
+
+        {
+          "name": "✅ operator 登录成功（OPERATOR角色）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('返回 token', () => pm.expect(json.data.token).to.be.a('string'));",
+                  "pm.test('roles 含 OPERATOR', () => pm.expect(json.data.roles).to.include('OPERATOR'));",
+                  "pm.test('有 report:export 权限', () => pm.expect(json.data.permissions).to.include('report:export'));",
+                  "pm.test('无 user:delete 权限', () => pm.expect(json.data.permissions).to.not.include('user:delete'));",
+                  "pm.collectionVariables.set('operatorToken', json.data.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"operator\",\n  \"password\": \"oper123\",\n  \"traceId\": \"trace-login-operator\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        },
+
+        {
+          "name": "✅ auditor 登录成功（AUDITOR角色）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('roles 含 AUDITOR', () => pm.expect(json.data.roles).to.include('AUDITOR'));",
+                  "pm.test('有 user:view 权限', () => pm.expect(json.data.permissions).to.include('user:view'));",
+                  "pm.test('无 user:delete 权限', () => pm.expect(json.data.permissions).to.not.include('user:delete'));",
+                  "pm.test('无 config:update 权限', () => pm.expect(json.data.permissions).to.not.include('config:update'));",
+                  "pm.collectionVariables.set('auditorToken', json.data.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"auditor\",\n  \"password\": \"audit123\",\n  \"traceId\": \"trace-login-auditor\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        },
+
+        {
+          "name": "❌ 用户不存在",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 1003', () => pm.expect(json.code).to.eql(1003));",
+                  "pm.test('消息：用户不存在', () => pm.expect(json.message).to.include('用户不存在'));",
+                  "pm.test('data 为 null', () => pm.expect(json.data).to.be.null);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ghost_user_not_exist\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-login-notfound\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        },
+
+        {
+          "name": "❌ 密码错误",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 1004', () => pm.expect(json.code).to.eql(1004));",
+                  "pm.test('消息：密码错误', () => pm.expect(json.message).to.include('密码错误'));",
+                  "pm.test('data 为 null', () => pm.expect(json.data).to.be.null);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrong_password_123\",\n  \"traceId\": \"trace-login-wrongpwd\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - 用户名为空",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));",
+                  "pm.test('消息含用户名不能为空', () => pm.expect(json.message).to.include('用户名不能为空'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"Test@123456\",\n  \"traceId\": \"trace-login-nousername\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - 密码为空",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));",
+                  "pm.test('消息含密码不能为空', () => pm.expect(json.message).to.include('密码不能为空'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"\",\n  \"traceId\": \"trace-login-nopwd\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        },
+
+        {
+          "name": "❌ 参数校验 - Body 完全为空",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200 或 400', () => {",
+                  "  pm.expect([200, 400]).to.include(pm.response.code);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 400', () => pm.expect(json.code).to.eql(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "03 - 获取当前用户信息 /api/me",
+      "item": [
+
+        {
+          "name": "✅ admin Token - 获取成功（含全量权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('username 为 admin', () => pm.expect(json.data.username).to.eql('admin'));",
+                  "pm.test('roles 含 ADMIN', () => pm.expect(json.data.roles).to.include('ADMIN'));",
+                  "pm.test('permissions 含 user:delete', () => pm.expect(json.data.permissions).to.include('user:delete'));",
+                  "pm.test('permissions 含 config:update', () => pm.expect(json.data.permissions).to.include('config:update'));",
+                  "pm.test('permissions 含 report:export', () => pm.expect(json.data.permissions).to.include('report:export'));",
+                  "pm.test('不暴露密码', () => pm.expect(json.data.password).to.be.undefined);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-me-admin" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api","me"] }
+          }
+        },
+
+        {
+          "name": "✅ operator Token - 获取成功（受限权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('username 为 operator', () => pm.expect(json.data.username).to.eql('operator'));",
+                  "pm.test('有 user:view', () => pm.expect(json.data.permissions).to.include('user:view'));",
+                  "pm.test('有 report:export', () => pm.expect(json.data.permissions).to.include('report:export'));",
+                  "pm.test('无 user:delete', () => pm.expect(json.data.permissions).to.not.include('user:delete'));",
+                  "pm.test('无 config:update', () => pm.expect(json.data.permissions).to.not.include('config:update'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operatorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-me-operator" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api","me"] }
+          }
+        },
+
+        {
+          "name": "✅ auditor Token - 获取成功（只读权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('只有 3 个权限', () => pm.expect(json.data.permissions.length).to.eql(3));",
+                  "pm.test('permissions 只含 view 类', () => {",
+                  "  json.data.permissions.forEach(p => pm.expect(p).to.match(/.*:view$/));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auditorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-me-auditor" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api","me"] }
+          }
+        },
+
+        {
+          "name": "❌ 未携带 Token（401）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 401', () => pm.expect(json.code).to.eql(401));",
+                  "pm.test('消息含未登录', () => pm.expect(json.message).to.include('未登录'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api","me"] }
+          }
+        },
+
+        {
+          "name": "❌ Token 格式错误（401）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 401', () => pm.expect(json.code).to.eql(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer invalid_token_string_abc123" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api","me"] }
+          }
+        },
+
+        {
+          "name": "❌ Authorization 头格式错误（缺少 Bearer 前缀）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 401', () => pm.expect(json.code).to.eql(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/me", "host": ["{{baseUrl}}"], "path": ["api","me"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "04 - 删除用户 DELETE /api/users/{id}（需要 user:delete）",
+      "item": [
+
+        {
+          "name": "✅ admin 删除新注册用户（有权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('消息：用户已删除', () => pm.expect(json.message).to.include('用户已删除'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-delete-user" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{newUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","users","{{newUserId}}"]
+            }
+          }
+        },
+
+        {
+          "name": "❌ 删除不存在的用户（1003）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 1003', () => pm.expect(json.code).to.eql(1003));",
+                  "pm.test('消息：用户不存在', () => pm.expect(json.message).to.include('用户不存在'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-delete-notfound" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/users/999999", "host": ["{{baseUrl}}"], "path": ["api","users","999999"] }
+          }
+        },
+
+        {
+          "name": "❌ operator 删除用户（无 user:delete 权限 → 403）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 403', () => pm.expect(json.code).to.eql(403));",
+                  "pm.test('消息含权限不足', () => pm.expect(json.message).to.include('权限不足'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operatorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-delete-forbidden-op" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/users/1", "host": ["{{baseUrl}}"], "path": ["api","users","1"] }
+          }
+        },
+
+        {
+          "name": "❌ auditor 删除用户（无 user:delete 权限 → 403）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 403', () => pm.expect(json.code).to.eql(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auditorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-delete-forbidden-aud" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/users/1", "host": ["{{baseUrl}}"], "path": ["api","users","1"] }
+          }
+        },
+
+        {
+          "name": "❌ 未携带 Token 删除用户（401）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 401', () => pm.expect(json.code).to.eql(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/users/1", "host": ["{{baseUrl}}"], "path": ["api","users","1"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "05 - 修改配置 PUT /api/config（需要 config:update）",
+      "item": [
+
+        {
+          "name": "✅ admin 修改配置（有权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('消息：配置已更新', () => pm.expect(json.message).to.include('配置已更新'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-config-admin" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/config", "host": ["{{baseUrl}}"], "path": ["api","config"] }
+          }
+        },
+
+        {
+          "name": "❌ operator 修改配置（无 config:update → 403）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 403', () => pm.expect(json.code).to.eql(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operatorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-config-operator" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/config", "host": ["{{baseUrl}}"], "path": ["api","config"] }
+          }
+        },
+
+        {
+          "name": "❌ auditor 修改配置（无 config:update → 403）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 403', () => pm.expect(json.code).to.eql(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auditorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-config-auditor" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/config", "host": ["{{baseUrl}}"], "path": ["api","config"] }
+          }
+        },
+
+        {
+          "name": "❌ 未携带 Token（401）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/config", "host": ["{{baseUrl}}"], "path": ["api","config"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "06 - 导出报表 POST /api/report/export（需要 report:export）",
+      "item": [
+
+        {
+          "name": "✅ admin 导出报表（有权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));",
+                  "pm.test('消息含报表导出', () => pm.expect(json.message).to.include('报表导出'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-export-admin" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/report/export", "host": ["{{baseUrl}}"], "path": ["api","report","export"] }
+          }
+        },
+
+        {
+          "name": "✅ operator 导出报表（有 report:export 权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 200', () => pm.expect(json.code).to.eql(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operatorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-export-operator" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/report/export", "host": ["{{baseUrl}}"], "path": ["api","report","export"] }
+          }
+        },
+
+        {
+          "name": "❌ auditor 导出报表（无 report:export → 403）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('业务码 403', () => pm.expect(json.code).to.eql(403));",
+                  "pm.test('消息含权限不足', () => pm.expect(json.message).to.include('权限不足'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auditorToken}}" },
+              { "key": "X-Trace-Id",    "value": "trace-export-auditor" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/report/export", "host": ["{{baseUrl}}"], "path": ["api","report","export"] }
+          }
+        },
+
+        {
+          "name": "❌ 未携带 Token（401）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/report/export", "host": ["{{baseUrl}}"], "path": ["api","report","export"] }
+          }
+        }
+
+      ]
+    }
+
+  ]
+}
