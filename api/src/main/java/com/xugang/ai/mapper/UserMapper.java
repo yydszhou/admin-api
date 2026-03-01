@@ -23,21 +23,26 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("SELECT COUNT(*) FROM users WHERE email = #{email} AND is_deleted = 0")
     int countByEmail(String email);
 
-    @Select("""
-            SELECT u.*
-            FROM users u
-            WHERE u.is_deleted = 0
-              AND (#{keyword} IS NULL OR #{keyword} = ''
-                   OR u.username ILIKE CONCAT('%', #{keyword}, '%')
-                   OR u.email ILIKE CONCAT('%', #{keyword}, '%'))
-              AND (#{status} IS NULL OR u.status = #{status})
-              AND (#{roleId} IS NULL OR EXISTS (
-                   SELECT 1 FROM user_roles ur
-                   WHERE ur.user_id = u.id AND ur.role_id = #{roleId}
-              ))
-            ORDER BY u.id DESC
-            LIMIT #{pageSize} OFFSET #{offset}
-            """)
+    @Select({
+            "<script>",
+            "SELECT u.*",
+            "FROM users u",
+            "LEFT JOIN user_roles ur ON u.id = ur.user_id",
+            "WHERE u.is_deleted = 0",
+            "<if test='keyword != null and keyword != \"\"'>",
+            "  AND (u.username LIKE CONCAT('%', #{keyword}, '%') OR u.email LIKE CONCAT('%', #{keyword}, '%'))",
+            "</if>",
+            "<if test='status != null'>",
+            "  AND u.status = #{status}",
+            "</if>",
+            "<if test='roleId != null'>",
+            "  AND ur.role_id = #{roleId}",
+            "</if>",
+            "GROUP BY u.id",
+            "ORDER BY u.id DESC",
+            "LIMIT #{pageSize} OFFSET #{offset}",
+            "</script>"
+    })
     List<User> selectUserPage(@Param("keyword") String keyword,
                               @Param("status") Integer status,
                               @Param("roleId") Long roleId,
@@ -45,18 +50,16 @@ public interface UserMapper extends BaseMapper<User> {
                               @Param("pageSize") Long pageSize);
 
     @Select("""
-            SELECT COUNT(*)
-            FROM users u
-            WHERE u.is_deleted = 0
-              AND (#{keyword} IS NULL OR #{keyword} = ''
-                   OR u.username ILIKE CONCAT('%', #{keyword}, '%')
-                   OR u.email ILIKE CONCAT('%', #{keyword}, '%'))
-              AND (#{status} IS NULL OR u.status = #{status})
-              AND (#{roleId} IS NULL OR EXISTS (
-                   SELECT 1 FROM user_roles ur
-                   WHERE ur.user_id = u.id AND ur.role_id = #{roleId}
-              ))
-            """)
+        SELECT COUNT(DISTINCT u.id)  -- 用DISTINCT避免roleId关联导致的计数重复
+        FROM users u
+        LEFT JOIN user_roles ur ON u.id = ur.user_id
+        WHERE u.is_deleted = 0
+          AND (#{keyword}::text IS NULL OR #{keyword} = ''
+               OR u.username LIKE CONCAT('%', #{keyword}, '%')
+               OR u.email LIKE CONCAT('%', #{keyword}, '%'))
+          AND (#{status}::integer IS NULL OR u.status = #{status})
+          AND (#{roleId}::bigint IS NULL OR ur.role_id = #{roleId})
+        """)
     Long countUserPage(@Param("keyword") String keyword,
                        @Param("status") Integer status,
                        @Param("roleId") Long roleId);

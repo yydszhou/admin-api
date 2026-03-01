@@ -36,12 +36,16 @@ mybatis-plus:
   configuration:
     # 下划线 → 驼峰字段自动映射
     map-underscore-to-camel-case: true
+    # 开启 SQL 参数打印
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       logic-delete-field: is_deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+  # 打印完整 SQL 配置
+  configuration-properties:
+    print-sql: true
 
 # Token 配置
 token:
