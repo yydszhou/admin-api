@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xugang.ai.mapper.RoleMapper">
+
+    <!-- 可复用的SQL片段 -->
+    
+    <!-- 基础角色查询字段（带表别名） -->
+    <sql id="roleColumnsWithAlias">
+        r.id, r.role_code, r.role_name, r.description, r.create_time, r.update_time, r.is_deleted
+    </sql>
+    
+    <!-- 基础角色查询字段（不带表别名） -->
+    <sql id="roleColumns">
+        id, role_code, role_name, description, create_time, update_time, is_deleted
+    </sql>
+    
+    <!-- 角色基础查询条件 -->
+    <sql id="roleBaseCondition">
+        is_deleted = 0
+    </sql>
+    
+    <!-- 根据用户ID查询角色列表 -->
+    <select id="selectRolesByUserId" resultType="com.xugang.ai.entity.Role">
+        SELECT <include refid="roleColumnsWithAlias"/>
+        FROM roles r
+        INNER JOIN user_roles ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId} AND <include refid="roleBaseCondition"/>
+    </select>
+    
+    <!-- 查询角色选项列表 -->
+    <select id="selectRoleOptions" resultType="map">
+        SELECT id, role_code AS roleCode, role_name AS roleName
+        FROM roles
+        WHERE <include refid="roleBaseCondition"/>
+        ORDER BY id DESC
+    </select>
+    
+    <!-- 查询角色概要信息列表 -->
+    <select id="selectRoleSummaryList" resultType="map">
+        SELECT r.id,
+               r.role_code AS roleCode,
+               r.role_name AS roleName,
+               r.description,
+               COUNT(DISTINCT ur.user_id) AS userCount,
+               COUNT(DISTINCT rp.permission_id) AS permissionCount
+        FROM roles r
+        LEFT JOIN user_roles ur ON ur.role_id = r.id
+        LEFT JOIN role_permissions rp ON rp.role_id = r.id
+        WHERE <include refid="roleBaseCondition"/>
+        GROUP BY r.id, r.role_code, r.role_name, r.description
+        ORDER BY r.id DESC
+    </select>
+    
+    <!-- 根据角色名称查询角色 -->
+    <select id="selectByRoleName" resultType="com.xugang.ai.entity.Role">
+        SELECT <include refid="roleColumns"/>
+        FROM roles 
+        WHERE role_name = #{roleName} AND <include refid="roleBaseCondition"/>
+    </select>
+    
+    <!-- 插入用户角色关联 -->
+    <insert id="insertUserRole">
+        INSERT INTO user_roles(user_id, role_id) 
+        VALUES(#{userId}, #{roleId})
+    </insert>
+    
+    <!-- 删除用户的所有角色关联 -->
+    <delete id="deleteUserRolesByUserId">
+        DELETE FROM user_roles 
+        WHERE user_id = #{userId}
+    </delete>
+    
+    <!-- 删除角色的所有用户关联 -->
+    <delete id="deleteUserRolesByRoleId">
+        DELETE FROM user_roles 
+        WHERE role_id = #{roleId}
+    </delete>
+    
+    <!-- 插入角色权限关联 -->
+    <insert id="insertRolePermission">
+        INSERT INTO role_permissions(role_id, permission_id) 
+        VALUES(#{roleId}, #{permissionId})
+    </insert>
+    
+    <!-- 删除角色的所有权限关联 -->
+    <delete id="deleteRolePermissionsByRoleId">
+        DELETE FROM role_permissions 
+        WHERE role_id = #{roleId}
+    </delete>
+    
+    <!-- 根据用户ID查询角色ID列表 -->
+    <select id="selectRoleIdsByUserId" resultType="long">
+        SELECT role_id 
+        FROM user_roles 
+        WHERE user_id = #{userId}
+    </select>
+    
+    <!-- 根据角色ID查询权限ID列表 -->
+    <select id="selectPermissionIdsByRoleId" resultType="long">
+        SELECT permission_id 
+        FROM role_permissions 
+        WHERE role_id = #{roleId}
+    </select>
+
+</mapper>

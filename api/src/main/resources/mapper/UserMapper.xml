@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xugang.ai.mapper.UserMapper">
+
+    <!-- 可复用的SQL片段 -->
+    
+    <!-- 基础用户查询字段（带表别名） -->
+    <sql id="userColumnsWithAlias">
+        u.id, u.username, u.email, u.password, u.status, u.create_time, u.update_time, u.is_deleted
+    </sql>
+    
+    <!-- 基础用户查询字段（不带表别名） -->
+    <sql id="userColumns">
+        id, username, email, password, status, create_time, update_time, is_deleted
+    </sql>
+    
+    <!-- 用户基础查询条件 -->
+    <sql id="userBaseCondition">
+        is_deleted = 0
+    </sql>
+    
+    <!-- 用户分页查询基础条件 -->
+    <sql id="userPageCondition">
+        <where>
+            <include refid="userBaseCondition"/>
+            <if test="keyword != null and keyword != ''">
+                AND (username ILIKE CONCAT('%', #{keyword}, '%') OR email ILIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="roleId != null">
+                AND EXISTS (
+                    SELECT 1 FROM user_roles ur 
+                    WHERE ur.user_id = u.id AND ur.role_id = #{roleId}
+                )
+            </if>
+        </where>
+    </sql>
+    
+    <!-- 查询单个用户通过用户名 -->
+    <select id="selectByUsername" resultType="com.xugang.ai.entity.User">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE username = #{username} AND <include refid="userBaseCondition"/>
+    </select>
+    
+    <!-- 查询单个用户通过邮箱 -->
+    <select id="selectByEmail" resultType="com.xugang.ai.entity.User">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE email = #{email} AND <include refid="userBaseCondition"/>
+    </select>
+    
+    <!-- 统计用户名数量 -->
+    <select id="countByUsername" resultType="int">
+        SELECT COUNT(*) 
+        FROM users 
+        WHERE username = #{username} AND <include refid="userBaseCondition"/>
+    </select>
+    
+    <!-- 统计邮箱数量 -->
+    <select id="countByEmail" resultType="int">
+        SELECT COUNT(*) 
+        FROM users 
+        WHERE email = #{email} AND <include refid="userBaseCondition"/>
+    </select>
+    
+    <!-- 分页查询用户列表 -->
+    <select id="selectUserPage" resultType="com.xugang.ai.entity.User">
+        SELECT <include refid="userColumns"/>
+        FROM users u
+        <include refid="userPageCondition"/>
+        ORDER BY u.id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+    
+    <!-- 统计分页用户总数 -->
+    <select id="countUserPage" resultType="long">
+        SELECT COUNT(DISTINCT u.id)
+        FROM users u
+        <include refid="userPageCondition"/>
+    </select>
+    
+    <!-- 统计用户角色关联数量 -->
+    <select id="countUserRole" resultType="long">
+        SELECT COUNT(*)
+        FROM user_roles
+        WHERE user_id = #{userId} AND role_id = #{roleId}
+    </select>
+
+</mapper>

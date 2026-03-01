@@ -33,6 +33,7 @@ spring:
 
 mybatis-plus:
   type-aliases-package: com.xugang.ai.entity
+  mapper-locations: classpath:mapper/*.xml
   configuration:
     # 下划线 → 驼峰字段自动映射
     map-underscore-to-camel-case: true
