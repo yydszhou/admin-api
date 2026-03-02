@@ -22,6 +22,7 @@
         <java.version>17</java.version>
         <!-- 覆盖 Spring Boot parent 默认版本，修复 JDK 21 下 TypeTag::UNKNOWN 问题 -->
         <lombok.version> 1.18.22</lombok.version>
+        <docker.java.version>3.5.0</docker.java.version>
     </properties>
     
     <dependencies>
@@ -81,6 +82,23 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <version>2.0.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.20.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
